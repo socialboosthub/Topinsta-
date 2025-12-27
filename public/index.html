@@ -1,177 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>InstaSaver | Premium Downloader</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --bg: #000;
-      --box-bg: #111;
-      --text-main: #fff;
-      --text-dim: #b0b0b0;
-      --insta-grad: linear-gradient(45deg, #833AB4, #FD1D1D, #FCAF45);
-      --nav-bg: #0a0a23;
-    }
-    body.light-mode {
-      --bg: #f5f5f7;
-      --box-bg: #fff;
-      --text-main: #000;
-      --text-dim: #222;
-    }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text-main); margin: 0; transition: 0.4s; overflow-x: hidden; }
-    
-    /* NAV */
-    .fcc-nav { background: var(--nav-bg); height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 10000; }
-    .fcc-logo { background: var(--insta-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 20px; text-decoration: none; }
-    .nav-right { display: flex; align-items: center; gap: 15px; }
-    .theme-icon { cursor: pointer; font-size: 20px; }
-    .menu-toggle { background: #3b3b4f; border: 1px solid #fff; color: #fff; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
-    
-    /* SIDE MENU */
-    .side-menu { position: fixed; top: 50px; right: -100%; width: 250px; height: calc(100vh - 50px); background: var(--nav-bg); transition: 0.4s; z-index: 9999; padding: 20px; display: flex; flex-direction: column; gap: 20px; border-left: 1px solid #333; }
-    .side-menu.open { right: 0; }
-    .side-menu a { color: #fff; text-decoration: none; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    <meta charset="UTF-8">
+    <title>InstaSaver | Instagram Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            /* Instagram Official Sunset Gradient */
+            --insta-grad: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #FCAF45);
+            --bg: #000;
+            --card: #121212;
+            --text: #fff;
+        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; text-align: center; }
+        
+        .navbar { background: #000; border-bottom: 1px solid #262626; padding: 15px; font-weight: bold; font-size: 1.2rem; }
+        .logo-text { background: var(--insta-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .hero { padding: 60px 20px; }
+        .input-area { 
+            max-width: 600px; margin: 0 auto; background: var(--card); padding: 30px; 
+            border-radius: 20px; border: 1px solid #333; box-shadow: 0 0 20px rgba(193, 53, 132, 0.2);
+        }
+        
+        input { 
+            width: 90%; padding: 15px; border-radius: 10px; border: 1px solid #333; 
+            background: #000; color: #fff; font-size: 16px; margin-bottom: 20px; outline: none;
+        }
+        input:focus { border-color: #E1306C; }
 
-    /* TABS */
-    .tab-container { display: flex; max-width: 600px; margin: 30px auto 10px; gap: 8px; padding: 0 10px; flex-wrap: wrap; justify-content: center;}
-    .filter-button { padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer; color: white; font-size: 12px; font-weight: bold; background: #222; transition: 0.4s ease; border: 1px solid #333; }
-    .filter-button.selected { background: var(--insta-grad); border: none; color: #fff; }
-
-    /* BOX */
-    .gradient-box { background: var(--insta-grad); padding: 3px; border-radius: 14px; max-width: 600px; margin: 20px auto; box-shadow: 0 10px 40px rgba(131, 58, 180, 0.3); }
-    .inner-box { background: var(--box-bg); border-radius: 12px; padding: 40px 20px; text-align: center; }
-    
-    .input-box { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); }
-    .input-box input, .input-box textarea { flex: 1; border: none; outline: none; font-size: 15px; color: var(--text-main); background: transparent; width: 100%; }
-    .input-box textarea { display: none; height: 60px; resize: none; padding-top:10px;} 
-    
-    .process-btn { width: 100%; padding: 15px; border-radius: 8px; border: none; background: var(--insta-grad); color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; display: none; }
-    .process-btn.active { display: block; }
-    .process-btn:hover { transform: scale(1.02); }
-
-    /* SECTIONS */
-    .section-wrap { max-width: 1000px; margin: 50px auto; padding: 0 20px; }
-    h2 { text-align: center; margin-bottom: 30px; font-size: 28px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-    .feature-card { background: var(--box-bg); padding: 25px; border-radius: 15px; border: 1px solid #333; text-align: center; }
-    
-    /* FOOTER */
-    .footer { padding: 40px 20px; background: #111; border-top: 3px solid #833AB4; margin-top: 50px; }
-    .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-    .footer a { color: #888; text-decoration: none; display: block; margin-bottom: 8px; font-size: 14px; }
-    .footer-bottom { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
-  </style>
+        .dl-btn { 
+            background: var(--insta-grad); color: #fff; border: none; padding: 15px 40px; 
+            border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 18px; width: 100%;
+        }
+        
+        .footer { margin-top: 100px; padding: 40px; color: #555; font-size: 14px; border-top: 1px solid #222; }
+    </style>
 </head>
 <body>
-  
-  <nav class="fcc-nav">
-    <a href="#" class="fcc-logo">InstaSaver</a>
-    <div class="nav-right">
-      <span class="theme-icon" onclick="toggleTheme()" id="theme-icon">🌙</span>
-      <button class="menu-toggle" onclick="toggleMenu()">Menu ☰</button>
-    </div>
-  </nav>
-
-  <div class="side-menu" id="side-menu">
-    <a href="#">Home</a>
-    <a href="history.html">📜 History</a>
-    <a href="contact.html">Contact Us</a>
-  </div>
-
-  <div class="tab-container">
-    <button class="filter-button selected" onclick="switchTab(0)">Reels & Video</button>
-    <button class="filter-button" onclick="switchTab(1)">Carousel</button>
-    <button class="filter-button" onclick="switchTab(2)">Stories</button>
-    <button class="filter-button" onclick="switchTab(3)">Audio</button>
-    <button class="filter-button" onclick="switchTab(4)">Batch Multi</button>
-  </div>
-
-  <div class="gradient-box">
-    <div class="inner-box">
-      <h1 id="page-title" style="margin-top:0;">Download Instagram Reels</h1>
-      <p id="page-desc" style="color:var(--text-dim); font-size:14px; margin-bottom:25px;">Paste an Instagram link to start downloading.</p>
-      
-      <div class="input-box">
-        <input type="text" id="main-input" placeholder="🔗 Paste Instagram link here...">
-        <textarea id="multi-input" placeholder="🔗 Paste multiple links (one per line)"></textarea>
-      </div>
-
-      <button id="pbtn-0" class="process-btn active" onclick="go('video-download.html')">Download Reel</button>
-      <button id="pbtn-1" class="process-btn" onclick="go('carousel-download.html')">Download Carousel</button>
-      <button id="pbtn-2" class="process-btn" onclick="go('story-download.html')">Download Story</button>
-      <button id="pbtn-3" class="process-btn" onclick="go('audio-download.html')">Extract Audio</button>
-      <button id="pbtn-4" class="process-btn" onclick="go('download.html')">Process Batch</button>
-    </div>
-  </div>
-
-  <div class="section-wrap">
-    <h2>Why use InstaSaver?</h2>
-    <div class="grid-3">
-        <div class="feature-card"><h3>🚀 Lightning Fast</h3><p>Direct connections to Instagram CDNs for max speed.</p></div>
-        <div class="feature-card"><h3>💎 No Watermark</h3><p>Clean downloads for creators and editors.</p></div>
-        <div class="feature-card"><h3>🔒 Secure</h3><p>We don't store your history or files.</p></div>
-    </div>
-  </div>
-
-  <footer class="footer">
-    <div class="footer-grid">
-      <div><h3>InstaSaver</h3><p>The best tool for IG content.</p></div>
-      <div><h4>Links</h4><a href="tiktok.html">TikTok Downloader</a><a href="contact.html">Contact</a></div>
-      <div><h4>Legal</h4><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
-    </div>
-    <div class="footer-bottom">© 2025 InstaSaver. All rights reserved.</div>
-  </footer>
-
-  <script>
-    const tabs = [
-      { t: "Download Instagram Reels", d: "Save Reels and Videos in HD." },
-      { t: "Download Carousel", d: "Save multiple photos/videos from one post." },
-      { t: "Download Stories", d: "Save stories before they disappear." },
-      { t: "Instagram Audio Saver", d: "Extract MP3 from Reels." },
-      { t: "Batch Downloader", d: "Download multiple links at once." }
-    ];
-    let active = 0;
-
-    function toggleTheme() {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-        document.getElementById('theme-icon').textContent = document.body.classList.contains('light-mode') ? "☀️" : "🌙";
-    }
-    function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
+    <div class="navbar"><span class="logo-text">InstaSaver</span></div>
     
-    function switchTab(idx) {
-        active = idx;
-        document.querySelectorAll('.filter-button').forEach((b, i) => b.classList.toggle('selected', i === idx));
-        document.querySelectorAll('.process-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-        document.getElementById('page-title').innerText = tabs[idx].t;
-        document.getElementById('page-desc').innerText = tabs[idx].d;
-        const isMulti = idx === 4;
-        document.getElementById('main-input').style.display = isMulti ? 'none' : 'block';
-        document.getElementById('multi-input').style.display = isMulti ? 'block' : 'none';
-    }
-
-    function go(page) {
-        const input = active === 4 ? document.getElementById('multi-input') : document.getElementById('main-input');
-        const val = input.value.trim();
-        if(!val) return alert("Please paste a link first");
+    <div class="hero">
+        <h1>Instagram Video Downloader</h1>
+        <p style="color: #8e8e8e;">Download Reels, Videos, and Photos in HD</p>
         
-        // Save History Logic
-        let history = JSON.parse(localStorage.getItem("instaHistory")) || [];
-        if(active !== 4) {
-            history.unshift({ url: val, cat: active, date: new Date().toLocaleDateString() });
-            localStorage.setItem("instaHistory", JSON.stringify(history.slice(0,50)));
+        <div class="input-area">
+            <input type="text" id="urlInput" placeholder="Paste Instagram link here...">
+            <button class="dl-btn" onclick="startDownload()">Download Now</button>
+        </div>
+    </div>
+
+    <div class="footer">© 2025 InstaSaver • High Performance Web</div>
+
+    <script>
+        function startDownload() {
+            const val = document.getElementById('urlInput').value.trim();
+            if(!val) return alert("Paste a link!");
+            // Redirects to your existing download logic page
+            window.location.href = `video-download.html?links=${encodeURIComponent(val)}`;
         }
-
-        window.location.href = page + "?links=" + encodeURIComponent(val);
-    }
-
-    // Init Theme
-    if(localStorage.getItem('theme') === 'light') toggleTheme();
-  </script>
+    </script>
 </body>
 </html>
