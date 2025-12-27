@@ -1,93 +1,99 @@
-const express = require("express");
-const fetch = require("node-fetch");
-
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
+const path = require('path');
 const app = express();
+const PORT = 3000;
 
-// API: Fetch TikTok data
-app.get("/api", async (req, res) => {
-  try {
+app.use(cors());
+app.use(express.static('public')); // Assumes your HTML files are in a 'public' folder
+
+// --- MOCK API HANDLER ---
+// In a production environment, you would use a library like 'instagram-url-direct' here.
+// For this demo, we return mock data so the UI functions perfectly.
+app.get('/api', async (req, res) => {
     const url = req.query.url;
-    if (!url) return res.status(400).json({ error: "No URL provided" });
-
-    const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)"
-      }
-    });
-
-    const json = await response.json();
-    res.json(json);
-  } catch {
-    res.status(500).json({ error: "API failed" });
-  }
+    
+    // Simulate processing delay (aesthetic)
+    setTimeout(() => {
+        // Mock Response Structure matching your frontend logic
+        res.json({
+            data: {
+                id: "insta_" + Date.now(),
+                title: "Instagram Post Caption #Hashtag",
+                cover: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60", // Placeholder IG image
+                origin_cover: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                play: "https://www.w3schools.com/html/mov_bbb.mp4", // Placeholder Video
+                hdplay: "https://www.w3schools.com/html/mov_bbb.mp4",
+                music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Placeholder Audio
+                music_info: {
+                    title: "Trending Audio",
+                    cover: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png"
+                },
+                author: {
+                    unique_id: "instagram_user",
+                    avatar: "https://cdn-icons-png.flaticon.com/512/87/87390.png"
+                },
+                // For Carousel/Slider logic
+                images: [
+                    "https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                ]
+            }
+        });
+    }, 1500);
 });
 
-// MP3 Backend Route
-app.get("/mp3", async (req, res) => {
-  try {
-    const response = await fetch(req.query.url);
+// --- FILE DOWNLOAD PROXY ---
+// This forces the browser to download files instead of playing them
+app.get('/download', async (req, res) => {
+    const fileUrl = req.query.url;
+    const id = req.query.id || Date.now();
+    const isHd = req.query.hd;
     
-    // Get ID from frontend, or default to random if missing
-    const id = req.query.id || Math.floor(Math.random() * 100000);
-    const fileName = `tiktop-${id}.mp3`;
+    const filename = `InstaSaver-${id}${isHd ? '-HD' : ''}.mp4`;
 
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${fileName}"`
-    );
-    response.body.pipe(res);
-  } catch {
-    res.status(500).send("Audio download failed");
-  }
-});
+    try {
+        const response = await axios({
+            url: fileUrl,
+            method: 'GET',
+            responseType: 'stream'
+        });
 
-
-// VIDEO
-app.get("/download", async (req, res) => {
-  try {
-    const response = await fetch(req.query.url);
-    
-    const id = req.query.id || "video";
-    
-    // Check if hd=1 is in the URL. If yes, add _hd.
-    let fileName;
-    if (req.query.hd === "1") {
-        fileName = `tiktop-${id}_hd.mp4`;
-    } else {
-        fileName = `tiktop-${id}.mp4`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', response.headers['content-type']);
+        response.data.pipe(res);
+    } catch (error) {
+        res.status(500).send("Error downloading file");
     }
-
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-    response.body.pipe(res);
-  } catch {
-    res.status(500).send("Download failed");
-  }
 });
 
-// IMAGE
+// --- MP3 DOWNLOAD PROXY ---
+app.get('/mp3', async (req, res) => {
+    const fileUrl = req.query.url;
+    const id = req.query.id || Date.now();
+    const filename = `InstaSaver-Audio-${id}.mp3`;
 
-app.get("/image", async (req, res) => {
-  try {
-    const response = await fetch(req.query.url);
-    
-    const id = req.query.id || "image";
-    const index = req.query.index ? `-img-${req.query.index}` : "";
-    
-    // Result: tiktop-748293-img-1.jpeg
-    const fileName = `tiktop-${id}${index}.jpeg`;
-
-    res.setHeader("Content-Type", "image/jpeg");
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-    response.body.pipe(res);
-  } catch {
-    res.status(500).send("Image download failed");
-  }
+    try {
+        const response = await axios({ url: fileUrl, method: 'GET', responseType: 'stream' });
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        response.data.pipe(res);
+    } catch (error) { res.status(500).send("Error"); }
 });
 
+// --- IMAGE DOWNLOAD PROXY ---
+app.get('/image', async (req, res) => {
+    const fileUrl = req.query.url;
+    const id = req.query.id || Date.now();
+    const index = req.query.index || 1;
+    const filename = `InstaSaver-${id}-img-${index}.jpg`;
 
-module.exports = app;
+    try {
+        const response = await axios({ url: fileUrl, method: 'GET', responseType: 'stream' });
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        response.data.pipe(res);
+    } catch (error) { res.status(500).send("Error"); }
+});
+
+app.listen(PORT, () => console.log(`InstaSaver running at http://localhost:${PORT}`));
