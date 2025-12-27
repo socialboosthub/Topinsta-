@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reel Downloader | InstaSaver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --insta-grad: linear-gradient(45deg, #833AB4, #FD1D1D, #FCAF45); }
+    body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; }
+    
+    .nav { background: #0a0a23; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { background: var(--insta-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 20px; text-decoration: none; }
+    
+    .container { max-width: 500px; margin: 50px auto; padding: 20px; }
+    
+    /* Instagram Card Style */
+    .card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: left; display: none; }
+    .header { display: flex; align-items: center; margin-bottom: 15px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; border: 2px solid #FD1D1D; padding: 2px; }
+    .thumb { width: 100%; border-radius: 8px; margin-bottom: 15px; }
+    
+    .btn { background: var(--insta-grad); border: none; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+    .btn-outline { background: transparent; border: 1px solid #555; color: #aaa; }
+    
+    .loader { border: 4px solid #222; border-top: 4px solid #E1306C; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 50px auto; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html" class="logo">InstaSaver</a>
+  <a href="index.html" style="color:white; text-decoration:none;">Back</a>
+</div>
+
+<div class="container">
+  <div id="loader" class="loader"></div>
+  <h3 id="status">Fetching Reel...</h3>
+
+  <div id="card" class="card">
+    <div class="header">
+        <img id="u-img" class="avatar" src="">
+        <strong id="u-name"></strong>
+    </div>
+    <img id="thumb" class="thumb" src="">
+    <div id="desc" style="font-size:13px; color:#ccc; margin-bottom:15px; max-height:50px; overflow:hidden;"></div>
+    
+    <button class="btn" onclick="dl(false)">Download Video</button>
+    <button class="btn" onclick="dl(true)" style="background:#333;">Download HD</button>
+    <button class="btn btn-outline" onclick="location.href='audio-download.html' + location.search">Extract Audio</button>
+  </div>
+</div>
+
+<script>
+  let videoData = {};
+
+  async function init() {
+    const url = new URLSearchParams(location.search).get("links");
+    try {
+        const res = await fetch(`/api?url=${encodeURIComponent(url)}`);
+        const json = await res.json();
+        const data = json.data;
+        videoData = data;
+
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("status").style.display = "none";
+        document.getElementById("card").style.display = "block";
+
+        document.getElementById("u-img").src = data.author.avatar;
+        document.getElementById("u-name").innerText = "@" + data.author.unique_id;
+        document.getElementById("thumb").src = data.cover;
+        document.getElementById("desc").innerText = data.title;
+        
+    } catch(e) {
+        document.getElementById("status").innerText = "Error fetching video.";
+    }
+  }
+
+  function dl(hd) {
+    const link = hd ? videoData.hdplay : videoData.play;
+    window.location.href = `/download?url=${encodeURIComponent(link)}&id=${videoData.id}&hd=${hd?1:0}`;
+  }
+
+  init();
+</script>
+
+</body>
+</html>
