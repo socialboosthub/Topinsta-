@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TikTop | History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root { --pink: #EE1D52; --cyan: #25F4EE; --bg: #000; --text: #fff; --nav-bg: #0a0a23; }
+    body.light-mode { --bg: #f5f5f7; --text: #000; }
+    
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; overflow-x: hidden;}
+
+    /* NAV */
+    .fcc-nav { background: var(--nav-bg); height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 10000; }
+    .fcc-logo { background: linear-gradient(to bottom right, var(--pink), var(--cyan)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 18px; text-decoration: none; }
+    .theme-icon { cursor: pointer; font-size: 20px; margin-right: 15px; }
+
+    /* TABS */
+    .tab-container { display: flex; max-width: 500px; margin: 20px auto; gap: 8px; padding: 0 10px; }
+    .filter-button { flex: 1; padding: 12px 0; border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 11px; font-weight: bold; background: linear-gradient(to bottom, #EE1D52 50%, #25F4EE 50%); background-size: 100% 200%; background-position: top; transition: 0.4s ease; }
+    .filter-button.selected { background-position: bottom; color: #000; }
+
+    /* CONTAINER */
+    .gradient-box { background: linear-gradient(180deg, #EE1D52 0%, #25F4EE 100%); padding: 30px 15px; border-radius: 12px; max-width: 500px; margin: auto; min-height: 400px; }
+    
+    /* STANDARD CARD (Video/Story/Slider) */
+    .history-card { background: #fff; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .card-top { display: flex; gap: 12px; align-items: flex-start; }
+    .card-thumb { width: 75px; height: 75px; border-radius: 8px; object-fit: cover; background: #eee; border: 1px solid #ddd; }
+    .card-meta { flex: 1; text-align: left; overflow: hidden; }
+    .card-user { font-weight: 800; font-size: 14px; color: #333; display: block; }
+    .card-desc { font-weight: 500; font-size: 13px; color: #555; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+
+    /* MP3 CARD */
+    .mp3-history-card { background: #fff; color: #000; border-radius: 20px; padding: 20px; margin-bottom: 12px; text-align: center; }
+    .music-disk { width: 80px; height: 80px; margin: 0 auto 10px; border-radius: 50%; border: 3px solid #333; animation: rotate 5s linear infinite; object-fit: cover; }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .mp3-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #000; }
+
+    /* BUTTONS */
+    .dl-btn { background: #000; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .dl-btn-round { background: var(--pink); color: white; border: none; padding: 12px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+    .clear-btn { background: #25F4EE; border: none; color: #000; padding: 15px; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; font-weight: bold; font-size: 16px; }
+    
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: 0.3s; z-index: 20000; pointer-events: none; }
+    #toast.show { opacity: 1; bottom: 40px; }
+  </style>
+</head>
+<body id="body">
+
+  <nav class="fcc-nav">
+    <a href="index.html" class="fcc-logo">TikTop</a>
+    <div>
+      <span class="theme-icon" id="theme-icon" onclick="toggleTheme()">🌙</span>
+      <button onclick="location.href='index.html'" style="background:#3b3b4f; color:#fff; border:1px solid #fff; padding:5px 10px; border-radius:4px; cursor:pointer;">Home</button>
+    </div>
+  </nav>
+
+  <div class="tab-container">
+    <button class="filter-button selected" onclick="switchTab(0)">Video</button>
+    <button class="filter-button" onclick="switchTab(1)">Mp3</button>
+    <button class="filter-button" onclick="switchTab(2)">Story</button>
+    <button class="filter-button" onclick="switchTab(3)">Slider</button>
+  </div>
+
+  <div class="gradient-box">
+    <div id="history-list"></div>
+    <button class="clear-btn" onclick="confirmClear()">Clear All History</button>
+  </div>
+
+  <div id="toast">Downloading...</div>
+
+  <script>
+    let activeCat = 0;
+    
+    function applyTheme() {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'light') { document.body.classList.add('light-mode'); document.getElementById('theme-icon').textContent = "☀️"; }
+    }
+
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-mode');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      document.getElementById('theme-icon').textContent = isLight ? "☀️" : "🌙";
+    }
+
+    function switchTab(idx) {
+      activeCat = idx;
+      document.querySelectorAll('.filter-button').forEach((b, i) => b.classList.toggle('selected', i === idx));
+      render();
+    }
+
+    function render() {
+      const list = document.getElementById('history-list');
+      let history = JSON.parse(localStorage.getItem("tiktopHistory")) || [];
+      const filtered = history.filter(item => item.category === activeCat);
+
+      if (filtered.length === 0) {
+        list.innerHTML = "<p style='text-align:center; color:white; margin-top:50px;'>No history here yet.</p>";
+        return;
+      }
+
+      list.innerHTML = filtered.map((item, idx) => {
+        if (activeCat === 1) {
+          return `
+            <div class="mp3-history-card">
+              <img src="${item.thumb || 'https://cdn-icons-png.flaticon.com/512/3046/3046121.png'}" class="music-disk" id="img-${idx}">
+              <div class="mp3-title" id="desc-${idx}">${item.description || 'Processing...'}</div>
+              <div style="font-size:12px; color:#666; margin-bottom:10px;" id="user-${idx}">${item.username || ''}</div>
+              <button class="dl-btn-round" onclick="handleDownload('${item.url}', ${idx})">🎵 Download MP3</button>
+            </div>`;
+        }
+        
+        return `
+          <div class="history-card">
+            <div class="card-top">
+              <img src="${item.thumb || 'https://cdn-icons-png.flaticon.com/512/3046/3046121.png'}" class="card-thumb" id="img-${idx}">
+              <div class="card-meta">
+                <span class="card-user" id="user-${idx}">${item.username || 'TikTok User'}</span>
+                <div class="card-desc" id="desc-${idx}">${item.description || 'Processing...'}</div>
+                <div style="font-size:10px; color:#999; margin-top:4px;">${item.date || ''}</div>
+              </div>
+            </div>
+            <button class="dl-btn" onclick="handleDownload('${item.url}', ${idx})">
+              ${activeCat === 3 ? '🖼️ View Slideshow' : '📥 Download Again'}
+            </button>
+          </div>`;
+      }).join('');
+
+      // Auto-update any "Processing" or "Batch Download" entries
+      filtered.forEach((item, idx) => {
+        if (item.description === "Processing..." || item.description === "Batch Download" || item.username === "TikTok User") {
+          fetchDetails(item.url, idx);
+        }
+      });
+    }
+
+    async function handleDownload(url, idx) {
+      showToast("Connecting...");
+      try {
+        const res = await fetch(`/api?url=${encodeURIComponent(url)}`);
+        const json = await res.json();
+        const data = json.data;
+        if (!data) throw new Error();
+
+        if (activeCat === 1) {
+          window.location.href = `/mp3?url=${encodeURIComponent(data.music)}&id=${data.id}`;
+        } else if (activeCat === 3) {
+          window.location.href = `slider-download.html?links=${encodeURIComponent(url)}`;
+        } else {
+          window.location.href = `/download?url=${encodeURIComponent(data.play)}&id=${data.id}`;
+        }
+      } catch (e) {
+        showToast("Error: Link expired or invalid.");
+      }
+    }
+
+    async function fetchDetails(url, uiIdx) {
+      try {
+        const res = await fetch(`/api?url=${encodeURIComponent(url)}`);
+        const json = await res.json();
+        if (json.data) {
+          const d = json.data;
+          const user = "@" + (d.author.unique_id || "User");
+          const title = d.title || (activeCat === 1 ? d.music_info.title : "TikTok Video");
+          const thumb = activeCat === 1 ? (d.music_info.cover || d.cover) : (d.cover || d.origin_cover);
+
+          // Update UI live
+          const uEl = document.getElementById(`user-${uiIdx}`);
+          const dEl = document.getElementById(`desc-${uiIdx}`);
+          const iEl = document.getElementById(`img-${uiIdx}`);
+          if(uEl) uEl.innerText = user;
+          if(dEl) dEl.innerText = title;
+          if(iEl) iEl.src = thumb;
+
+          // Update LocalStorage permanently
+          let history = JSON.parse(localStorage.getItem("tiktopHistory")) || [];
+          history.forEach(item => {
+            if(item.url === url) { 
+              item.username = user; 
+              item.description = title; 
+              item.thumb = thumb; 
+            }
+          });
+          localStorage.setItem("tiktopHistory", JSON.stringify(history));
+        }
+      } catch (e) {}
+    }
+
+    function confirmClear() { if (confirm("Delete all history?")) { localStorage.removeItem("tiktopHistory"); render(); } }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+    applyTheme();
+    render();
+  </script>
+</body>
+</html>
